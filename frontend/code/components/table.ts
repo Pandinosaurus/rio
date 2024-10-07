@@ -21,7 +21,7 @@ type TableState = ComponentState & {
 };
 
 export class TableComponent extends ComponentBase {
-    state: Required<TableState>;
+    declare state: Required<TableState>;
 
     private tableElement: HTMLElement;
 
@@ -190,11 +190,11 @@ export class TableComponent extends ComponentBase {
             let yy = Math.floor(ii / htmlWidth);
             let cellElement = this.tableElement.children[ii] as HTMLElement;
 
-            cellElement.addEventListener("mouseenter", () => {
+            cellElement.addEventListener("pointerenter", () => {
                 this.onEnterCell(cellElement, xx, yy);
             });
 
-            cellElement.addEventListener("mouseleave", () => {
+            cellElement.addEventListener("pointerleave", () => {
                 this.onLeaveCell(cellElement, xx, yy);
             });
         }

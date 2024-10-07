@@ -13,7 +13,7 @@ export type MultiLineTextInputState = ComponentState & {
 };
 
 export class MultiLineTextInputComponent extends ComponentBase {
-    state: Required<MultiLineTextInputState>;
+    declare state: Required<MultiLineTextInputState>;
 
     private inputBox: InputBox;
 
@@ -52,12 +52,12 @@ export class MultiLineTextInputComponent extends ComponentBase {
             event.stopImmediatePropagation();
         });
 
-        element.addEventListener("mousedown", (event) => {
+        element.addEventListener("pointerdown", (event) => {
             event.stopPropagation();
             event.stopImmediatePropagation();
         });
 
-        element.addEventListener("mouseup", (event) => {
+        element.addEventListener("pointerup", (event) => {
             event.stopPropagation();
             event.stopImmediatePropagation();
         });

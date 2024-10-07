@@ -17,7 +17,7 @@ export type TextInputState = ComponentState & {
 };
 
 export class TextInputComponent extends ComponentBase {
-    state: Required<TextInputState>;
+    declare state: Required<TextInputState>;
 
     private inputBox: InputBox;
     private onChangeLimiter: Debouncer;
@@ -101,12 +101,12 @@ export class TextInputComponent extends ComponentBase {
             event.stopImmediatePropagation();
         });
 
-        element.addEventListener("mousedown", (event) => {
+        element.addEventListener("pointerdown", (event) => {
             event.stopPropagation();
             event.stopImmediatePropagation();
         });
 
-        element.addEventListener("mouseup", (event) => {
+        element.addEventListener("pointerup", (event) => {
             event.stopPropagation();
             event.stopImmediatePropagation();
         });
