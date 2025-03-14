@@ -49,7 +49,8 @@ class Table(FundamentalComponent):
 
     `data`: The data to display.
 
-    `show_row_numbers`: Whether to show row numbers on the left side of the table.
+    `show_row_numbers`: Whether to show row numbers on the left side of the
+        table.
 
 
     ## Examples
@@ -81,9 +82,9 @@ class Table(FundamentalComponent):
                 }
             )
 
-            # apply some styling to the table, indexing rows and columns
+            # Apply some styling to the table, indexing rows and columns
             # works similar as numpy arrays.
-            # second and third row, second and third column are bold
+            # Second and third row, second and third column are bold
             table[1:3, 1:3].style(font_weight="bold")
 
             return table
@@ -299,6 +300,9 @@ class Table(FundamentalComponent):
         return result
 
 
+Table._unique_id_ = "Table-builtin"
+
+
 @t.final
 @dataclasses.dataclass
 class TableSelection:
@@ -314,6 +318,8 @@ class TableSelection:
     _italic: bool | None = None
     _font_weight: t.Literal["normal", "bold"] | None = None
 
+    _justify: t.Literal["left", "center", "right"] | None = None
+
     def style(
         self,
         *,
@@ -321,6 +327,7 @@ class TableSelection:
         background_color: rio.Color | None = None,
         italic: bool | None = None,
         font_weight: t.Literal["normal", "bold"] | None = None,
+        justify: t.Literal["left", "center", "right"] | None = None,
     ) -> Table:
         # Store the passed in values
         if font_color is not None:
@@ -334,6 +341,9 @@ class TableSelection:
 
         if font_weight is not None:
             self._font_weight = font_weight
+
+        if justify is not None:
+            self._justify = justify
 
         # Return the table to allow chaining
         return self._table
@@ -359,6 +369,9 @@ class TableSelection:
 
         if self._font_weight is not None:
             result["fontWeight"] = self._font_weight
+
+        if self._justify is not None:
+            result["justify"] = self._justify
 
         # Done
         return result
@@ -599,7 +612,7 @@ def _data_to_columnar(
             raise ValueError("The table data must be numeric")
 
         for ii in range(data.shape[1]):
-            columns.append(data[:, ii].tolist())
+            columns.append(data[:, ii].tolist())  # type: ignore
 
     # Mapping
     #
@@ -638,6 +651,3 @@ def _data_to_columnar(
 
     # Done
     return headers, columns
-
-
-Table._unique_id_ = "Table-builtin"

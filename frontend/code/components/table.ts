@@ -1,7 +1,6 @@
 import { colorToCssString } from "../cssUtils";
 import { Color } from "../dataModels";
-import { markEventAsHandled } from "../eventHandling";
-import { ComponentBase, ComponentState } from "./componentBase";
+import { ComponentBase, ComponentState, DeltaState } from "./componentBase";
 
 type TableValue = number | string;
 
@@ -15,19 +14,18 @@ type TableStyle = {
     backgroundColor?: Color;
     italic?: boolean;
     fontWeight?: "normal" | "bold";
+    justify?: "left" | "center" | "right";
 };
 
 type TableState = ComponentState & {
     _type_: "Table-builtin";
-    show_row_numbers?: boolean;
-    headers?: string[] | null;
-    columns?: TableValue[][];
-    styling?: TableStyle[];
+    show_row_numbers: boolean;
+    headers: string[] | null;
+    columns: TableValue[][];
+    styling: TableStyle[];
 };
 
-export class TableComponent extends ComponentBase {
-    declare state: Required<TableState>;
-
+export class TableComponent extends ComponentBase<TableState> {
     private dataWidth: number;
     private dataHeight: number;
 
@@ -66,7 +64,7 @@ export class TableComponent extends ComponentBase {
     }
 
     updateElement(
-        deltaState: TableState,
+        deltaState: DeltaState<TableState>,
         latentComponents: Set<ComponentBase>
     ): void {
         super.updateElement(deltaState, latentComponents);
@@ -353,6 +351,14 @@ export class TableComponent extends ComponentBase {
 
         if (style.fontWeight !== undefined) {
             css["font-weight"] = style.fontWeight;
+        }
+
+        if (style.justify === "left") {
+            css["justify-content"] = "start";
+        } else if (style.justify === "center") {
+            css["justify-content"] = "center";
+        } else if (style.justify === "right") {
+            css["justify-content"] = "end";
         }
 
         // Find the targeted area

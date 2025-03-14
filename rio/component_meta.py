@@ -176,13 +176,14 @@ class ComponentMeta(RioDataclassMeta):
             )
         )
 
-        # Store a weak reference to the component's creator
-        if global_state.currently_building_component is None:
-            component._weak_creator_ = lambda: None
-        else:
-            component._weak_creator_ = weakref.ref(
-                global_state.currently_building_component
-            )
+        # If the component has a `key`, register it
+        if component.key is not None:
+            if component.key in global_state.key_to_component:
+                raise RuntimeError(
+                    f'Multiple components share the key "{component.key}": {global_state.key_to_component[component.key]} and {component}'
+                )
+
+            global_state.key_to_component[component.key] = component
 
         # Keep track of this component's existence
         #

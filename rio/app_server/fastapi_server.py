@@ -31,6 +31,7 @@ from .. import (
     icon_registry,
     inspection,
     routing,
+    serialization,
     utils,
 )
 from ..errors import AssetError
@@ -965,7 +966,7 @@ Sitemap: {base_url / "rio/sitemap.xml"}
             # connection. Browsers have a "duplicate tab" feature that can
             # create a 2nd tab with the same session token as the original one,
             # and in that case we want to create a new session.
-            if sess._transport is not None:
+            if sess._rio_transport is not None:
                 await websocket.close(
                     3000,  # Custom error code
                     "Invalid session token.",
@@ -973,7 +974,9 @@ Sitemap: {base_url / "rio/sitemap.xml"}
                 return
 
             # Replace the session's websocket
-            sess._transport = transport = FastapiWebsocketTransport(websocket)
+            sess._rio_transport = transport = FastapiWebsocketTransport(
+                websocket
+            )
 
             # Make sure the client is in sync with the server by refreshing
             # every single component
@@ -1035,8 +1038,9 @@ Sitemap: {base_url / "rio/sitemap.xml"}
             timeout=60,
         )
 
-        initial_message = data_models.InitialClientMessage.from_json(
-            initial_message_json  # type: ignore
+        initial_message = serialization.json_serde.from_json(
+            data_models.InitialClientMessage,
+            initial_message_json,
         )
 
         try:

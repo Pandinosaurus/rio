@@ -8,7 +8,7 @@ from uniserde import Jsonable
 
 import rio
 
-from .fundamental_component import KeyboardFocusableFundamentalComponent
+from .keyboard_focusable_components import KeyboardFocusableFundamentalComponent
 
 __all__ = [
     "KeyEventListener",
@@ -18,6 +18,9 @@ __all__ = [
     "KeyUpEvent",
     "KeyPressEvent",
 ]
+
+
+T = t.TypeVar("T")
 
 
 HardwareKey = t.Literal[
@@ -435,7 +438,7 @@ SoftwareKey = t.Literal[
     "color-f1-green",
     "color-f2-yellow",
     "color-f3-blue",
-    "color-f4-grey",
+    "color-f4-gray",
     "color-f5-brown",
     "closed-caption-toggle",
     "dimmer",
@@ -564,8 +567,9 @@ SoftwareKey = t.Literal[
 ]
 
 ModifierKey = t.Literal["alt", "control", "meta", "shift"]
+KeyCombination = SoftwareKey | tuple[ModifierKey | SoftwareKey, ...]
 
-_MODIFIERS = ("control", "shift", "alt", "meta")
+_MODIFIERS: tuple[ModifierKey, ...] = t.get_args(ModifierKey)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -663,15 +667,24 @@ class KeyEventListener(KeyboardFocusableFundamentalComponent):
 
     content: rio.Component
     _: dataclasses.KW_ONLY
-    on_key_down: rio.EventHandler[KeyDownEvent] = None
-    on_key_up: rio.EventHandler[KeyUpEvent] = None
-    on_key_press: rio.EventHandler[KeyPressEvent] = None
+    on_key_down: (
+        rio.EventHandler[KeyDownEvent]
+        | t.Mapping[KeyCombination, rio.EventHandler[KeyDownEvent]]
+    ) = None
+    on_key_up: (
+        rio.EventHandler[KeyUpEvent]
+        | t.Mapping[KeyCombination, rio.EventHandler[KeyUpEvent]]
+    ) = None
+    on_key_press: (
+        rio.EventHandler[KeyPressEvent]
+        | t.Mapping[KeyCombination, rio.EventHandler[KeyPressEvent]]
+    ) = None
 
     def _custom_serialize_(self) -> dict[str, Jsonable]:
         return {
-            "reportKeyDown": self.on_key_down is not None,
-            "reportKeyUp": self.on_key_up is not None,
-            "reportKeyPress": self.on_key_press is not None,
+            "reportKeyDown": _serialize_one_handler(self.on_key_down),
+            "reportKeyUp": _serialize_one_handler(self.on_key_up),
+            "reportKeyPress": _serialize_one_handler(self.on_key_press),
         }
 
     async def _on_message_(self, msg: t.Any) -> None:
@@ -683,19 +696,22 @@ class KeyEventListener(KeyboardFocusableFundamentalComponent):
 
         # Dispatch the correct event
         if msg_type == "KeyDown":
-            await self.call_event_handler(
+            await self._call_key_event_handler(
+                msg["keyCombination"],
                 self.on_key_down,
                 KeyDownEvent._from_json(msg),
             )
 
         elif msg_type == "KeyUp":
-            await self.call_event_handler(
+            await self._call_key_event_handler(
+                msg["keyCombination"],
                 self.on_key_up,
                 KeyUpEvent._from_json(msg),
             )
 
         elif msg_type == "KeyPress":
-            await self.call_event_handler(
+            await self._call_key_event_handler(
+                msg["keyCombination"],
                 self.on_key_press,
                 KeyPressEvent._from_json(msg),
             )
@@ -708,5 +724,37 @@ class KeyEventListener(KeyboardFocusableFundamentalComponent):
         # Refresh the session
         await self.session._refresh()
 
+    async def _call_key_event_handler(
+        self,
+        key_combination: KeyCombination | None,
+        handler: rio.EventHandler[T]
+        | t.Mapping[KeyCombination, rio.EventHandler[T]],
+        event: T,
+    ) -> None:
+        if handler is not None and not callable(handler):
+            assert key_combination is not None
+
+            # JSON turns our tuple into a list
+            if isinstance(key_combination, list):
+                key_combination = tuple(key_combination)  # type: ignore (?????)
+
+            try:
+                handler = handler[key_combination]  # type: ignore (?????)
+            except KeyError:
+                return
+
+        await self.call_event_handler(handler, event)
+
 
 KeyEventListener._unique_id_ = "KeyEventListener-builtin"
+
+
+def _serialize_one_handler(
+    handler: rio.EventHandler | t.Mapping[KeyCombination, rio.EventHandler],
+) -> Jsonable:
+    if not handler:
+        return []
+    elif callable(handler):
+        return True
+    else:
+        return list(handler)

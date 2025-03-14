@@ -83,7 +83,7 @@ def _derive_color(
     return result
 
 
-def _make_semantic_palette(color: rio.Color) -> Palette:
+def _make_colorful_palette(color: rio.Color) -> Palette:
     return Palette(
         background=color,
         background_variant=_derive_color(
@@ -94,11 +94,12 @@ def _make_semantic_palette(color: rio.Color) -> Palette:
         background_active=_derive_color(
             color,
             0.2,
-            bias_to_bright=0.8,
+            bias_to_bright=0.6,
         ),
         foreground=_derive_color(
             color,
-            0.6,
+            0.75,
+            bias_to_bright=0.6,
         ),
     )
 
@@ -562,27 +563,13 @@ class Theme:
         if primary_color is None:
             primary_color = rio.Color.from_hex("01dffd")
 
-        primary_palette = Palette(
-            primary_color,
-            foreground=_derive_color(
-                primary_color,
-                offset=0.5,
-                bias_to_bright=0.5,
-            ),
-        )
+        primary_palette = _make_colorful_palette(primary_color)
 
         # Secondary palette
         if secondary_color is None:
             secondary_color = rio.Color.from_hex("0083ff")
 
-        secondary_palette = Palette(
-            secondary_color,
-            foreground=_derive_color(
-                secondary_color,
-                offset=0.5,
-                bias_to_bright=0.5,
-            ),
-        )
+        secondary_palette = _make_colorful_palette(secondary_color)
 
         # Background palette
         if background_color is None:
@@ -700,9 +687,9 @@ class Theme:
         if danger_color is None:
             danger_color = rio.Color.from_hex("b3261e")
 
-        success_palette = _make_semantic_palette(success_color)
-        warning_palette = _make_semantic_palette(warning_color)
-        danger_palette = _make_semantic_palette(danger_color)
+        success_palette = _make_colorful_palette(success_color)
+        warning_palette = _make_colorful_palette(warning_color)
+        danger_palette = _make_colorful_palette(danger_color)
 
         # Colorful headings can be a problem when the primary color is similar
         # to the background/neutral color. If the `color_headings` argument is
@@ -1045,6 +1032,6 @@ class Theme:
         choose to use different fonts.
         """
         assert self.text_style.font is not None, (
-            f"The theme's text style must have a font set"
+            "The theme's text style must have a font set"
         )
         return self.text_style.font
